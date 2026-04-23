@@ -1,7 +1,14 @@
-import { GoogleGenAI } from "@google/genai";
+// 1. 导入 OpenAI 官方库
+import OpenAI from "openai";
 import { DocumentMetadata } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// 2. 初始化 DeepSeek 客户端
+// baseURL: 告诉程序去 DeepSeek 的服务器地址
+// apiKey: 从环境变量中读取在 Vercel 的“钥匙”
+const ai = new OpenAI({
+  baseURL: "https://api.deepseek.com",
+  apiKey: process.env.DEEPSEEK_API_KEY,
+});
 
 const SYSTEM_PROMPT = `
 You are the Biohacking Lab Research Assistant for middle/high school students.
@@ -23,25 +30,29 @@ RESPONSE (IN ENGLISH, WITH CITATIONS):
 `;
 
 export async function askQuestion(question: string, docs: DocumentMetadata[]) {
-  // Aggregate document content for the prompt
-  // In a production app with huge documents, we'd use vector search.
-  // Here, with 25 docs and 2M token context, we can construct a large prompt.
+  // 文档处理逻辑：将所有 PDF 文本拼接在一起
   const docsText = docs.map(d => `--- DOCUMENT: ${d.name} ---\n${d.text}`).join('\n\n');
   
+  // Prompt 逻辑
   const prompt = SYSTEM_PROMPT.replace('{{DOCS}}', docsText).replace('{{QUESTION}}', question);
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        temperature: 0.1, // Low temperature for high grounding
-      }
+    // 3.  DeepSeek 的对话方式
+    const response = await ai.chat.completions.create({
+      model: "deepseek-chat", // 使用 DeepSeek 的通用对话模型
+      messages: [
+        { role: 'user', content: prompt } // 将拼接好的 Prompt 发送过去
+      ],
+      temperature: 0.1, // 依然保持 0.1 的低随机性，确保回答严谨不胡说
     });
 
-    return response.text;
+    // 4. 返回 DeepSeek 生成的文本内容
+    // choices[0] 表示取模型给出的第一个（通常也是唯一的）回答
+    return response.choices[0].message.content;
+
   } catch (error) {
-    console.error("Gemini Error:", error);
+    // 报错
+    console.error("DeepSeek Error:", error);
     throw new Error("Failed to generate response from biological knowledge base.");
   }
 }
