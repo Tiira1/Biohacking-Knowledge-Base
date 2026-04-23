@@ -103,22 +103,27 @@ export default function AdminConsole({ isAuthenticated, onAuthenticated, docs }:
   };
 
   const handleDelete = async (docObj: DocumentMetadata) => {
-    if (!confirm(`Delete "${docObj.name}"?`)) return;
+  if (!confirm(`Delete "${docObj.name}"?`)) return;
+  
+  try {
+    // Delete from Firestore
+    await deleteDoc(doc(db, 'documents', docObj.id));
     
-    try {
-      // Delete from Firestore
-      await deleteDoc(doc(db, 'documents', docObj.id));
-      
-      // Delete file from our own server
+    // Delete file from our own server
+    // 提取文件名：从 /uploads/1776941836875-xxx.pdf 中提取文件名部分
+    const filenameToDelete = docObj.downloadUrl.split('/').pop() || '';
+    
+    if (filenameToDelete) {
       await fetch('/api/delete-file', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: docObj.storagePath })
+        body: JSON.stringify({ filename: `uploads/${filenameToDelete}` })
       });
-    } catch (err: any) {
-      setError('Deletion failed');
     }
-  };
+  } catch (err: any) {
+    setError('Deletion failed');
+  }
+};
 
   if (!isAuthenticated) {
     return (
