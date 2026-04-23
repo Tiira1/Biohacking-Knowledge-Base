@@ -7,7 +7,7 @@ import { DocumentMetadata } from "../types";
 // apiKey: 从环境变量中读取在 Vercel 的“钥匙”
 const ai = new OpenAI({
   baseURL: "https://api.deepseek.com",
-  apiKey: process.env.DEEPSEEK_API_KEY,
+  apiKey: import.meta.env.VITE_DEEPSEEK_API_KEY,
 });
 
 const SYSTEM_PROMPT = `
