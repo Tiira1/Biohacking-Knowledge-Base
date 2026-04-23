@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper: Basic Signed In
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper: Is Valid ID
+    function isValidId(id) {
+       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Helper: Check Admin Status (Session-based or specific doc)
+    // For this app, we'll allow writes to documents if a specific 'admin_secret' is provided in the request
+    // or if the user is authenticated as an admin.
+    // For simplicity and security, we'll assume the admin uses the built-in Firebase Auth for the dashboard.
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // --- DOCUMENTS ---
+    match /documents/{docId} {
+      allow read: if true; // Students can read all docs
+      
+      // Allow creation if the secret matches
+      allow create: if request.resource.data.adminSecret == 'biohacking2026';
+      
+      // Allow deletion if the secret matches what was stored
+      allow delete: if resource.data.adminSecret == 'biohacking2026';
+      
+      // No standard updates allowed
+      allow update: if false;
+
+      function isValidDocument(data) {
+        return data.name is string && data.name.size() <= 255
+               && data.storagePath is string && data.storagePath.size() <= 1024
+               && data.uploadedAt is timestamp;
+      }
+    }
+
+    // --- CHATS ---
+    match /chats/{chatId} {
+      allow read, create: if true; // Students can create chats
+      allow update, delete: if false;
+      
+      match /messages/{msgId} {
+        allow read, create: if true;
+        allow update, delete: if false;
+      }
+    }
+
+    // --- ADMIN CONFIG ---
+    match /admins/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if false; // Only manageable through console
+    }
+  }
+}

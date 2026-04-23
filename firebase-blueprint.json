@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "Document": {
+      "title": "Document",
+      "description": "Metadata for an uploaded research paper",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "storagePath": { "type": "string" },
+        "downloadUrl": { "type": "string" },
+        "uploadedAt": { "type": "string", "format": "date-time" },
+        "text": { "type": "string" },
+        "pageCount": { "type": "integer" },
+        "adminSecret": { "type": "string" }
+      },
+      "required": ["name", "storagePath", "uploadedAt", "adminSecret"]
+    },
+    "ChatSession": {
+      "title": "ChatSession",
+      "description": "A conversation history",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastMessage": { "type": "string" }
+      }
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single message in a chat",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "docId": { "type": "string" },
+              "docName": { "type": "string" },
+              "page": { "type": "integer" },
+              "snippet": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "/documents/{docId}": {
+      "schema": "Document",
+      "description": "Collection of research papers"
+    },
+    "/chats/{chatId}": {
+      "schema": "ChatSession",
+      "description": "Active chat sessions"
+    },
+    "/chats/{chatId}/messages/{msgId}": {
+      "schema": "Message",
+      "description": "Messages within a session"
+    }
+  }
+}

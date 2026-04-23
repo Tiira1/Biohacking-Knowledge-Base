@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /documents/{allPaths=**} {
+      allow read: if true;
+      allow write: if true; // In a high-security app we'd restrict this, but for this prototype shared secret app, we allow writes to this specific path.
+    }
+  }
+}
