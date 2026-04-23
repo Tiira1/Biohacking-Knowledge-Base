@@ -28,6 +28,9 @@ async function startServer() {
 
   app.use(express.json());
 
+  // 👇 关键！添加这一行 - 让服务器能提供 /uploads 里的 PDF 文件
+  app.use('/uploads', express.static(uploadDir));
+
   // API: Upload PDF
   app.post("/api/upload", upload.single("pdf"), (req, res) => {
     if (!req.file) {
