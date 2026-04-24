@@ -46,7 +46,7 @@ async function startServer() {
     const { filename } = req.body;
     if (!filename) return res.status(400).send();
 
-    const filePath = path.join(process.cwd(), "public", filename);
+ const filePath = path.join(process.cwd(), "public", "uploads", filename);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
       res.json({ success: true });
